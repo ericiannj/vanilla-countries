@@ -20,6 +20,9 @@ const SELECTORS = {
   comparatorBar: '#comparatorBar',
   comparatorSlot1: '#comparatorSlot1',
   comparatorSlot2: '#comparatorSlot2',
+  comparisonPanel: '#comparisonPanel',
+  comparisonCards: '#comparisonCards',
+  comparisonClear: '#comparisonClear',
 };
 
 const DOM = Object.entries(SELECTORS).reduce((acc, [key, selector]) => {
@@ -215,6 +218,7 @@ class CountriesAtlasApp {
     }
 
     this.updateKnownButton(data.code);
+    this.updateCompareButton(data.code);
   }
 
   showErrorState(code) {
@@ -270,6 +274,24 @@ class CountriesAtlasApp {
     DOM.cardClose?.addEventListener('click', () => this.closeCard());
     DOM.btnKnown?.addEventListener('click', () => this.toggleKnownCountry(this.selectedCountryCode));
 
+    DOM.btnCompare?.addEventListener('click', () => {
+      if (!this.selectedCountryCode) return;
+      const code = this.selectedCountryCode;
+      const idx = this.comparisonCountries.indexOf(code);
+      if (idx !== -1) {
+        this.removeCountryFromComparison(idx);
+      } else {
+        this.addCountryToComparison(code);
+      }
+    });
+
+    DOM.comparisonClear?.addEventListener('click', () => {
+      this.comparisonCountries = [];
+      this.renderComparatorSlots();
+      this.renderComparisonPanel();
+      if (this.selectedCountryCode) this.updateCompareButton(this.selectedCountryCode);
+    });
+
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') this.closeCard();
     });
@@ -295,6 +317,128 @@ class CountriesAtlasApp {
     void DOM.knownCount.offsetWidth;
     DOM.knownCount.classList.add('bump');
     setTimeout(() => DOM.knownCount.classList.remove('bump'), 300);
+  }
+
+  addCountryToComparison(code) {
+    if (!code) return;
+    if (this.comparisonCountries.includes(code)) return;
+
+    if (this.comparisonCountries.length >= 2) {
+      this.comparisonCountries.shift();
+    }
+    this.comparisonCountries.push(code);
+
+    this.fetchCountryByCode(code)
+      .then(() => {
+        this.renderComparatorSlots();
+        this.renderComparisonPanel();
+        if (this.selectedCountryCode) this.updateCompareButton(this.selectedCountryCode);
+      })
+      .catch(() => {
+        this.renderComparatorSlots();
+        this.renderComparisonPanel();
+      });
+  }
+
+  removeCountryFromComparison(index) {
+    this.comparisonCountries.splice(index, 1);
+    this.renderComparatorSlots();
+    this.renderComparisonPanel();
+    if (this.selectedCountryCode) this.updateCompareButton(this.selectedCountryCode);
+  }
+
+  renderComparatorSlots() {
+    [DOM.comparatorSlot1, DOM.comparatorSlot2].forEach((slot, i) => {
+      if (!slot) return;
+      const code = this.comparisonCountries[i];
+
+      if (!code) {
+        slot.innerHTML = '<span class="comp-empty-text">+ Add a country</span>';
+        slot.classList.add('comp-slot--empty');
+        return;
+      }
+
+      const data = this.countryCache.get(code);
+      if (!data) return;
+
+      slot.classList.remove('comp-slot--empty');
+      slot.innerHTML = `
+        <span class="comp-slot-flag" aria-hidden="true">${this.escapeHtml(data.flag)}</span>
+        <div class="comp-slot-info">
+          <div class="comp-slot-name">${this.escapeHtml(data.common)}</div>
+          <div class="comp-slot-sub">${this.escapeHtml(data.capital)}</div>
+        </div>
+        <button class="comp-slot-remove" aria-label="Remove ${this.escapeHtml(data.common)} from comparator">✕</button>
+      `;
+      slot.querySelector('.comp-slot-remove')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.removeCountryFromComparison(i);
+      });
+    });
+  }
+
+  renderComparisonPanel() {
+    if (!DOM.comparisonPanel || !DOM.comparisonCards) return;
+
+    if (this.comparisonCountries.length === 0) {
+      DOM.comparisonPanel.hidden = true;
+      return;
+    }
+
+    DOM.comparisonPanel.hidden = false;
+
+    const renderCard = (code) => {
+      if (!code) {
+        return `
+          <div class="comp-card comp-card--empty">
+            <span class="comp-card-empty-text">+ Add a country to compare</span>
+          </div>`;
+      }
+
+      const data = this.countryCache.get(code);
+      if (!data) {
+        return `<div class="comp-card"><div class="skeleton" style="height:180px;border-radius:10px;"></div></div>`;
+      }
+
+      const stats = [
+        { label: 'Capital',    value: data.capital },
+        { label: 'Population', value: data.population },
+        { label: 'Area',       value: data.area },
+        { label: 'Region',     value: data.region },
+        { label: 'Subregion',  value: data.subregion },
+        { label: 'Languages',  value: data.languages },
+        { label: 'Currencies', value: data.currencies },
+      ];
+
+      return `
+        <div class="comp-card">
+          <div class="comp-card-header">
+            <span class="comp-card-flag" aria-hidden="true">${this.escapeHtml(data.flag)}</span>
+            <div class="comp-card-names">
+              <div class="comp-card-common">${this.escapeHtml(data.common)}</div>
+              <div class="comp-card-official">${this.escapeHtml(data.official)}</div>
+            </div>
+          </div>
+          <div class="comp-card-stats">
+            ${stats.map(s => `
+              <div>
+                <div class="stat-label">${this.escapeHtml(s.label)}</div>
+                <div class="stat-value">${this.escapeHtml(s.value)}</div>
+              </div>`).join('')}
+          </div>
+        </div>`;
+    };
+
+    const card1 = renderCard(this.comparisonCountries[0] ?? null);
+    const card2 = renderCard(this.comparisonCountries[1] ?? null);
+    DOM.comparisonCards.innerHTML = card1 + card2;
+  }
+
+  updateCompareButton(code) {
+    if (!DOM.btnCompare || !code) return;
+    const isInComparison = this.comparisonCountries.includes(code);
+    DOM.btnCompare.textContent = isInComparison ? '✓ In Comparator' : '+ Compare';
+    DOM.btnCompare.classList.toggle('is-comparing', isInComparison);
   }
 
   escapeHtml(text) {
