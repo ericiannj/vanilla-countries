@@ -75,6 +75,11 @@ class CountriesAtlasApp {
       const svgText = await res.text();
       if (DOM.mapContainer) {
         DOM.mapContainer.innerHTML = svgText;
+        const svg = DOM.mapContainer.querySelector('svg');
+        if (svg) {
+          svg.setAttribute('role', 'img');
+          svg.setAttribute('aria-label', 'Interactive world map — click a country to explore it');
+        }
         this.bindMapEvents();
         this.applyMapClasses();
       }
@@ -177,6 +182,7 @@ class CountriesAtlasApp {
     }
     if (DOM.cardChips) DOM.cardChips.innerHTML = '';
     DOM.detailCard.hidden = false;
+    DOM.detailCard.setAttribute('aria-busy', 'true');
   }
 
   renderCountryDetails(data) {
@@ -217,6 +223,7 @@ class CountriesAtlasApp {
       }
     }
 
+    DOM.detailCard.removeAttribute('aria-busy');
     this.updateKnownButton(data.code);
     this.updateCompareButton(data.code);
   }
@@ -232,6 +239,7 @@ class CountriesAtlasApp {
         `<p class="card-error-msg">Request failed. Check your connection and try again.</p>`;
     }
     if (DOM.cardChips) DOM.cardChips.innerHTML = '';
+    DOM.detailCard.removeAttribute('aria-busy');
     DOM.detailCard.hidden = false;
   }
 
@@ -258,8 +266,9 @@ class CountriesAtlasApp {
   updateKnownButton(code) {
     if (!DOM.btnKnown || !code) return;
     const isKnown = this.knownCountries.has(code);
-    DOM.btnKnown.textContent = isKnown ? '✓ Remove from Known' : '✓ Mark as Known';
+    DOM.btnKnown.textContent = isKnown ? 'Remove from Known' : 'Mark as Known';
     DOM.btnKnown.classList.toggle('is-known', isKnown);
+    DOM.btnKnown.setAttribute('aria-pressed', String(isKnown));
   }
 
   applyMapClasses() {
@@ -437,8 +446,9 @@ class CountriesAtlasApp {
   updateCompareButton(code) {
     if (!DOM.btnCompare || !code) return;
     const isInComparison = this.comparisonCountries.includes(code);
-    DOM.btnCompare.textContent = isInComparison ? '✓ In Comparator' : '+ Compare';
+    DOM.btnCompare.textContent = isInComparison ? 'In Comparator' : '+ Compare';
     DOM.btnCompare.classList.toggle('is-comparing', isInComparison);
+    DOM.btnCompare.setAttribute('aria-pressed', String(isInComparison));
   }
 
   escapeHtml(text) {

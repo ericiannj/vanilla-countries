@@ -736,6 +736,96 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ============================================================
+   RESPONSIVE — tablet (≤ 900px)
+   ============================================================ */
+@media (max-width: 900px) {
+  :root {
+    --detail-w: 260px;
+  }
+}
+
+/* ============================================================
+   RESPONSIVE — mobile (≤ 680px)
+   The detail card becomes a bottom sheet above the comp bar.
+   ============================================================ */
+@media (max-width: 680px) {
+  :root {
+    --comp-bar-h: 64px;
+  }
+
+  /* Compact header */
+  .app-header {
+    padding: 10px 16px;
+  }
+
+  .logo-sub {
+    display: none;
+  }
+
+  /* Detail card → bottom sheet */
+  .detail-card {
+    top: auto;
+    right: 0;
+    left: 0;
+    bottom: var(--comp-bar-h);
+    width: 100%;
+    border-radius: 12px 12px 0 0;
+    max-height: 58vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    animation: slideUpPanel var(--t-normal) var(--ease);
+  }
+
+  /* Comparison panel fills available height on mobile */
+  .comparison-panel {
+    padding: 14px 16px 16px;
+  }
+
+  /* Comp bar: hide decorative label to free width for slots */
+  .comp-label {
+    display: none;
+  }
+
+  .comp-slot {
+    max-width: none;
+    padding: 8px 10px;
+    min-height: 48px;
+  }
+
+  .comp-empty-text {
+    font-size: 10px;
+  }
+
+  .comp-vs {
+    font-size: 10px;
+  }
+
+  /* Map hint: slightly smaller on mobile */
+  .map-hint {
+    font-size: 10px;
+    bottom: calc(var(--comp-bar-h) + 14px);
+  }
+}
+
+/* ============================================================
+   RESPONSIVE — small mobile (≤ 400px)
+   ============================================================ */
+@media (max-width: 400px) {
+  .known-label {
+    display: none;
+  }
+
+  .known-counter {
+    padding: 6px 10px;
+    gap: 6px;
+  }
+
+  .card-actions {
+    flex-direction: column;
+  }
+}
+
 /* Comparison cards stack on narrow screens */
 @media (max-width: 600px) {
   .comparison-cards {

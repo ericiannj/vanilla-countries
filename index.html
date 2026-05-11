@@ -29,12 +29,12 @@
         <!-- SVG world map injected via loadMap() in main.js -->
       </div>
       <!-- Hint shown when no country is selected -->
-      <div class="map-hint" id="mapHint" aria-hidden="true">
-        Click any country to explore · Countries glow on hover
-      </div>
+      <p class="map-hint" id="mapHint" aria-live="polite">
+        Click any country to explore
+      </p>
     </div>
     <!-- Detail Card — fixed floating, top-right -->
-    <aside class="detail-card" id="detailCard" hidden aria-label="Country details" aria-live="polite">
+    <aside class="detail-card" id="detailCard" hidden aria-label="Country details" aria-live="polite" aria-atomic="false">
       <div class="card-flag-area">
         <span class="card-flag" id="cardFlag" aria-hidden="true"></span>
         <div class="card-names">
@@ -49,8 +49,8 @@
         <span class="chip-label">Borders</span>
         <div class="card-chips" id="cardChips"></div>
         <div class="card-actions">
-          <button class="btn btn-known" id="btnKnown">✓ Mark as Known</button>
-          <button class="btn btn-compare" id="btnCompare">+ Compare</button>
+          <button class="btn btn-known" id="btnKnown" aria-pressed="false">Mark as Known</button>
+          <button class="btn btn-compare" id="btnCompare" aria-pressed="false">+ Compare</button>
         </div>
       </div>
     </aside>
