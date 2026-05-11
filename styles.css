@@ -208,6 +208,16 @@ body {
   stroke-width: 1.5;
 }
 
+/* Map load error */
+.map-load-error {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
 /* Empty-state hint */
 .map-hint {
   position: absolute;

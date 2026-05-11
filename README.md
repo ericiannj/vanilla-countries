@@ -17,17 +17,15 @@ An interactive world atlas built with vanilla HTML, CSS, and JavaScript — no f
 - [REST Countries API v3.1](https://restcountries.com)
 - `localStorage` for persistence
 
-## Local Usage
+## Running Locally
 
-No build step. Open `index.html` directly in any modern browser, or use a local server:
+The app has no build step, but it **must be served over HTTP** — opening `index.html` directly as a `file://` URL will not work. This is because the SVG world map (`assets/world-map.svg`) is loaded at runtime via `fetch()` and injected into the DOM, so JavaScript can access individual country `<path>` elements to apply interactive classes like `selected` and `known`. Browsers block `fetch` requests on the `file://` protocol due to CORS policy.
 
 ```bash
-# Node
-npx serve .
-
-# Python
-python3 -m http.server 8000
+npm start
 ```
+
+This runs `npx serve .` and serves the project on **http://localhost:3000**.
 
 ## Project Structure
 

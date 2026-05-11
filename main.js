@@ -38,6 +38,7 @@ class CountriesAtlasApp {
 
   init() {
     this.loadKnownCountries();
+    this.loadMap();
     this.bindEvents();
     this.updateKnownCounter();
   }
@@ -64,18 +65,92 @@ class CountriesAtlasApp {
     }
   }
 
+  async loadMap() {
+    try {
+      const res = await fetch('assets/world-map.svg');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const svgText = await res.text();
+      if (DOM.mapContainer) {
+        DOM.mapContainer.innerHTML = svgText;
+        this.bindMapEvents();
+        this.applyMapClasses();
+      }
+    } catch (err) {
+      console.error('Failed to load map:', err);
+      if (DOM.mapContainer) {
+        DOM.mapContainer.innerHTML =
+          '<p class="map-load-error">Map unavailable</p>';
+      }
+    }
+  }
+
+  bindMapEvents() {
+    const svg = DOM.mapContainer?.querySelector('svg');
+    if (!svg) return;
+
+    svg.addEventListener('click', (e) => {
+      const path = e.target.closest('path[data-code]');
+      if (!path) return;
+      this.selectCountry(path.dataset.code);
+    });
+  }
+
+  selectCountry(code) {
+    if (!code) return;
+
+    const previous = this.selectedCountryCode;
+
+    this.selectedCountryCode = code;
+
+    if (previous) {
+      DOM.mapContainer
+        ?.querySelector(`path[data-code="${previous}"]`)
+        ?.classList.remove('selected');
+    }
+
+    DOM.mapContainer
+      ?.querySelector(`path[data-code="${code}"]`)
+      ?.classList.add('selected');
+
+    if (DOM.mapHint) DOM.mapHint.hidden = true;
+
+    this.showCountryPlaceholder(code);
+  }
+
+  showCountryPlaceholder(code) {
+    if (!DOM.detailCard) return;
+
+    if (DOM.cardFlag)    DOM.cardFlag.textContent    = '';
+    if (DOM.cardCommon)  DOM.cardCommon.textContent  = code;
+    if (DOM.cardOfficial) DOM.cardOfficial.textContent = 'Loading…';
+    if (DOM.cardGrid)    DOM.cardGrid.innerHTML      = '';
+    if (DOM.cardChips)   DOM.cardChips.innerHTML     = '';
+
+    DOM.detailCard.hidden = false;
+  }
+
+  applyMapClasses() {
+    for (const code of this.knownCountries) {
+      DOM.mapContainer
+        ?.querySelector(`path[data-code="${code}"]`)
+        ?.classList.add('known');
+    }
+  }
+
   bindEvents() {
     DOM.cardClose?.addEventListener('click', () => this.closeCard());
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') this.closeCard();
     });
-
-    // Map click and hover events will be wired in Commit 2 when the SVG is injected.
-    // Comparator slot interactions will be added in a later commit.
   }
 
   closeCard() {
+    if (this.selectedCountryCode) {
+      DOM.mapContainer
+        ?.querySelector(`path[data-code="${this.selectedCountryCode}"]`)
+        ?.classList.remove('selected');
+    }
     if (DOM.detailCard) DOM.detailCard.hidden = true;
     this.selectedCountryCode = null;
     if (DOM.mapHint) DOM.mapHint.hidden = false;
