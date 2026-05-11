@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vanilla Countries</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <!-- Header — floats over the map with gradient fade -->
+    <header class="app-header">
+      <div class="logo">
+        <div class="logo-icon">🌍</div>
+        <div>
+          <div class="logo-text">Countries Atlas</div>
+          <div class="logo-sub">Explore the world</div>
+        </div>
+      </div>
+      <div class="known-counter" id="knownCounterWidget" aria-label="Known countries counter">
+        <div class="known-dot" aria-hidden="true"></div>
+        <span class="known-label">Known</span>
+        <span class="known-num" id="knownCount">0</span>
+        <span class="known-label">/ 195</span>
+      </div>
+    </header>
+    <!-- Map — full 100vw × 100vh hero layer -->
+    <div class="map-area">
+      <div class="map-container" id="mapContainer">
+        <!-- SVG world map injected here in Commit 2 -->
+      </div>
+      <!-- Hint shown when no country is selected -->
+      <div class="map-hint" id="mapHint" aria-hidden="true">
+        Click any country to explore · Countries glow on hover
+      </div>
+    </div>
+    <!-- Detail Card — fixed floating, top-right -->
+    <aside class="detail-card" id="detailCard" hidden aria-label="Country details" aria-live="polite">
+      <div class="card-flag-area">
+        <span class="card-flag" id="cardFlag" aria-hidden="true"></span>
+        <div class="card-names">
+          <div class="card-common" id="cardCommon"></div>
+          <div class="card-official" id="cardOfficial"></div>
+        </div>
+        <button class="card-close" id="cardClose" aria-label="Close detail card">✕</button>
+      </div>
+      <div class="card-body">
+        <div class="card-grid" id="cardGrid"></div>
+        <div class="card-divider"></div>
+        <span class="chip-label">Borders</span>
+        <div class="card-chips" id="cardChips"></div>
+        <div class="card-actions">
+          <button class="btn btn-known" id="btnKnown">✓ Mark as Known</button>
+          <button class="btn btn-compare" id="btnCompare">+ Compare</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Comparator Bar — fixed at the bottom -->
+    <div class="comparator-bar" id="comparatorBar" aria-label="Country comparator">
+      <span class="comp-label">Compare</span>
+      <div class="comp-slots">
+        <div class="comp-slot comp-slot--empty" id="comparatorSlot1" aria-label="First comparison slot">
+          <span class="comp-empty-text">+ Add a country</span>
+        </div>
+        <div class="comp-vs" aria-hidden="true">vs</div>
+        <div class="comp-slot comp-slot--empty" id="comparatorSlot2" aria-label="Second comparison slot">
+          <span class="comp-empty-text">+ Add a country</span>
+        </div>
+      </div>
+    </div>
+    <script src="main.js"></script>
+  </body>
+</html>

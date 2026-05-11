@@ -1,0 +1,608 @@
+/* ============================================================
+   VARIABLES
+   ============================================================ */
+:root {
+  /* Backgrounds */
+  --bg-base:    #010409;
+  --bg-surface: #0d1117;
+  --bg-raised:  #161b22;
+  --bg-overlay: #21262d;
+
+  /* Borders */
+  --border:        #30363d;
+  --border-subtle: #21262d;
+
+  /* Text */
+  --text-primary:   #e6edf3;
+  --text-secondary: #8b949e;
+  --text-muted:     #484f58;
+
+  /* Accents */
+  --green:     #3fb950;
+  --green-dim: #091a0f;
+  --blue:      #58a6ff;
+  --blue-dim:  #0f2040;
+  --red:       #f85149;
+
+  /* Layout */
+  --header-h:   56px;
+  --detail-w:   280px;
+  --comp-bar-h: 76px;
+
+  /* Transitions */
+  --t-fast:   0.15s;
+  --t-normal: 0.2s;
+  --ease:     ease;
+}
+
+/* ============================================================
+   RESET
+   ============================================================ */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.app-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  background: linear-gradient(to bottom, #0d1117f0 0%, #0d111700 100%);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+/* Logo */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  width: 28px;
+  height: 28px;
+  background: #1f3a5f;
+  border: 1px solid #2d4a6e;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.logo-text {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.logo-sub {
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin-top: 1px;
+  line-height: 1;
+}
+
+/* Known counter pill */
+.known-counter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 11px;
+}
+
+.known-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px rgba(63, 185, 80, 0.4);
+  flex-shrink: 0;
+}
+
+.known-label {
+  color: var(--text-secondary);
+}
+
+.known-num {
+  color: var(--green);
+  font-weight: 700;
+  font-size: 13px;
+  display: inline-block;
+  transition: transform var(--t-fast) var(--ease);
+}
+
+.known-num.bump {
+  transform: scale(1.3);
+}
+
+/* ============================================================
+   MAP AREA — full viewport hero
+   ============================================================ */
+.map-area {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-base);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.map-container {
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+}
+
+/* SVG paths injected in Commit 2 */
+.map-container svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.map-container path[data-code] {
+  fill: #0d1117;
+  stroke: #1a2332;
+  stroke-width: 0.5;
+  transition:
+    fill var(--t-fast) var(--ease),
+    stroke var(--t-fast) var(--ease);
+  cursor: pointer;
+}
+
+.map-container path[data-code]:hover {
+  fill: #111e35;
+  stroke: #2d4a6e;
+}
+
+.map-container path[data-code].selected {
+  fill: var(--blue-dim);
+  stroke: var(--blue);
+  stroke-width: 1.5;
+}
+
+.map-container path[data-code].known {
+  fill: var(--green-dim);
+  stroke: var(--green);
+}
+
+.map-container path[data-code].known.selected {
+  fill: #102a14;
+  stroke: var(--green);
+  stroke-width: 1.5;
+}
+
+/* Empty-state hint */
+.map-hint {
+  position: absolute;
+  bottom: calc(var(--comp-bar-h) + 20px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   DETAIL CARD — fixed floating, top-right
+   ============================================================ */
+.detail-card {
+  position: fixed;
+  top: calc(var(--header-h) + 14px);
+  right: 24px;
+  width: var(--detail-w);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  z-index: 90;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
+  animation: slideInRight var(--t-normal) var(--ease);
+}
+
+.detail-card[hidden] {
+  display: none;
+}
+
+.card-flag-area {
+  height: 80px;
+  background: linear-gradient(135deg, #1f3a5f, var(--bg-surface));
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  position: relative;
+}
+
+.card-flag {
+  font-size: 36px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.card-names {
+  flex: 1;
+  min-width: 0;
+}
+
+.card-common {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-official {
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: var(--bg-overlay);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    color var(--t-fast) var(--ease),
+    background var(--t-fast) var(--ease);
+  line-height: 1;
+  font-family: inherit;
+}
+
+.card-close:hover {
+  color: var(--text-primary);
+  background: var(--border);
+}
+
+.card-body {
+  padding: 14px;
+}
+
+/* Stats grid */
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.stat-label {
+  font-size: 9px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 2px;
+}
+
+.stat-value {
+  font-size: 12px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.card-divider {
+  height: 1px;
+  background: var(--bg-overlay);
+  margin-bottom: 12px;
+}
+
+/* Border chips */
+.chip-label {
+  font-size: 9px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 4px;
+  display: block;
+}
+
+.card-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.chip {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 10px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    border-color var(--t-fast) var(--ease),
+    color var(--t-fast) var(--ease);
+}
+
+.chip:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+.chip-none {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Card action buttons */
+.card-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid;
+  cursor: pointer;
+  transition: all var(--t-fast) var(--ease);
+  text-align: center;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.btn-known {
+  background: var(--green-dim);
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.btn-known:hover {
+  background: var(--green);
+  color: var(--bg-base);
+}
+
+.btn-known.is-known {
+  background: var(--green);
+  color: var(--bg-base);
+}
+
+.btn-compare {
+  background: var(--bg-raised);
+  border-color: var(--border);
+  color: var(--text-secondary);
+}
+
+.btn-compare:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+/* ============================================================
+   COMPARATOR BAR — fixed at the bottom
+   ============================================================ */
+.comparator-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  height: var(--comp-bar-h);
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border-subtle);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.comp-label {
+  font-size: 10px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  white-space: nowrap;
+}
+
+.comp-slots {
+  display: flex;
+  gap: 12px;
+  flex: 1;
+  align-items: center;
+}
+
+.comp-slot {
+  flex: 1;
+  max-width: 240px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+}
+
+.comp-slot--empty {
+  border-style: dashed;
+  justify-content: center;
+}
+
+.comp-slot-flag {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.comp-slot-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.comp-slot-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.comp-slot-sub {
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.comp-slot-remove {
+  font-size: 11px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 2px 5px;
+  border-radius: 3px;
+  background: none;
+  border: none;
+  font-family: inherit;
+  flex-shrink: 0;
+  transition:
+    color var(--t-fast) var(--ease),
+    background var(--t-fast) var(--ease);
+}
+
+.comp-slot-remove:hover {
+  color: var(--red);
+  background: rgba(248, 81, 73, 0.1);
+}
+
+.comp-empty-text {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.comp-vs {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   SKELETON LOADING
+   ============================================================ */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-raised) 25%, var(--bg-overlay) 50%, var(--bg-raised) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ============================================================
+   ACCESSIBILITY
+   ============================================================ */
+*:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+/* ============================================================
+   SELECTION
+   ============================================================ */
+::selection {
+  background: rgba(88, 166, 255, 0.28);
+  color: var(--text-primary);
+}
