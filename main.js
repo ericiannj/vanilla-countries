@@ -213,6 +213,8 @@ class CountriesAtlasApp {
         DOM.cardChips.innerHTML = '<span class="chip-none">None</span>';
       }
     }
+
+    this.updateKnownButton(data.code);
   }
 
   showErrorState(code) {
@@ -229,6 +231,33 @@ class CountriesAtlasApp {
     DOM.detailCard.hidden = false;
   }
 
+  toggleKnownCountry(code) {
+    if (!code) return;
+
+    if (this.knownCountries.has(code)) {
+      this.knownCountries.delete(code);
+      DOM.mapContainer
+        ?.querySelector(`path[data-code="${code}"]`)
+        ?.classList.remove('known');
+    } else {
+      this.knownCountries.add(code);
+      DOM.mapContainer
+        ?.querySelector(`path[data-code="${code}"]`)
+        ?.classList.add('known');
+    }
+
+    this.saveKnownCountries();
+    this.updateKnownCounter();
+    this.updateKnownButton(code);
+  }
+
+  updateKnownButton(code) {
+    if (!DOM.btnKnown || !code) return;
+    const isKnown = this.knownCountries.has(code);
+    DOM.btnKnown.textContent = isKnown ? '✓ Remove from Known' : '✓ Mark as Known';
+    DOM.btnKnown.classList.toggle('is-known', isKnown);
+  }
+
   applyMapClasses() {
     for (const code of this.knownCountries) {
       DOM.mapContainer
@@ -239,6 +268,7 @@ class CountriesAtlasApp {
 
   bindEvents() {
     DOM.cardClose?.addEventListener('click', () => this.closeCard());
+    DOM.btnKnown?.addEventListener('click', () => this.toggleKnownCountry(this.selectedCountryCode));
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') this.closeCard();
