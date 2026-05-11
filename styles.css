@@ -554,6 +554,14 @@ body {
   flex-shrink: 0;
 }
 
+/* Card error message */
+.card-error-msg {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  color: var(--red);
+  line-height: 1.5;
+}
+
 /* ============================================================
    SKELETON LOADING
    ============================================================ */
