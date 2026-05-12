@@ -857,6 +857,11 @@ body {
     font-size: 10px;
     bottom: calc(var(--comp-bar-h) + 14px);
   }
+
+  /* Map controls: hidden on touch devices — pinch-to-zoom and pan gestures cover this */
+  .map-controls {
+    display: none;
+  }
 }
 
 /* ============================================================

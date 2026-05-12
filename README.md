@@ -1,10 +1,11 @@
-# Vanilla Countries
+# vanilla-countries
 
 An interactive world atlas built with vanilla HTML, CSS, and JavaScript — no frameworks, no build step.
 
 ## Features
 
 - **Interactive SVG Map** — Click countries on a world map. Visual states for hover, selected, and known countries are reflected directly on the SVG paths.
+- **Zoom & Pan Navigation** — Mouse wheel to zoom, click-and-drag to pan, pinch-to-zoom on touch screens. On-screen +/−/⊙ buttons on desktop. Zoom and pan are bounded so the map always fills the viewport — no black borders, no zooming out past the fill level.
 - **Country Details** — Flag, name, capital, population, area, region, subregion, languages, currencies, and neighboring countries, loaded from the REST Countries API. Clicking a border chip navigates to that country. API results are cached in memory for the session.
 - **Known Countries** — Toggle any selected country as known. Known countries are highlighted on the map and counted in a live header widget. State persists across page reloads via `localStorage`.
 - **Country Comparator** — Add up to two countries from the detail panel to compare them side by side. A bar at the bottom shows current comparison slots; the panel expands to display the full comparison table.
@@ -40,5 +41,6 @@ Data is fetched from `https://restcountries.com/v3.1/alpha/{code}`. No API key i
 - **SVG coverage** — The world map SVG includes most sovereign states but may be missing some small island nations or territories. Countries not present in the SVG cannot be selected on the map.
 - **API availability** — The app depends on the public REST Countries API. If the API is unavailable or rate-limits requests, the detail panel will show an error. Cached results from the same session remain available.
 - **No keyboard map navigation** — Individual countries on the SVG map are not reachable via keyboard tab navigation. The app is mouse/touch-driven for map interaction.
+- **Mobile zoom controls** — The on-screen +/−/⊙ buttons are hidden on mobile viewports. Pinch-to-zoom and single-finger pan gestures are the intended interaction on touch devices.
 - **Emoji flags** — Country flags are rendered as Unicode emoji, which may display differently across operating systems and browsers.
 - **localStorage** — If the browser blocks or clears `localStorage`, known countries will not persist between sessions. The app falls back silently.
