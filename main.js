@@ -23,6 +23,8 @@ const SELECTORS = {
   comparisonPanel: '#comparisonPanel',
   comparisonCards: '#comparisonCards',
   comparisonClear: '#comparisonClear',
+  knownReset: '#knownReset',
+  compClearBar: '#compClearBar',
 };
 
 const DOM = Object.entries(SELECTORS).reduce((acc, [key, selector]) => {
@@ -479,6 +481,7 @@ class CountriesAtlasApp {
   bindEvents() {
     DOM.cardClose?.addEventListener('click', () => this.closeCard());
     DOM.btnKnown?.addEventListener('click', () => this.toggleKnownCountry(this.selectedCountryCode));
+    DOM.knownReset?.addEventListener('click', () => this.resetKnownCountries());
 
     document.getElementById('mapZoomIn')?.addEventListener('click', () => {
       const rect = DOM.mapContainer.getBoundingClientRect();
@@ -501,12 +504,14 @@ class CountriesAtlasApp {
       }
     });
 
-    DOM.comparisonClear?.addEventListener('click', () => {
+    const clearComparison = () => {
       this.comparisonCountries = [];
       this.renderComparatorSlots();
       this.renderComparisonPanel();
       if (this.selectedCountryCode) this.updateCompareButton(this.selectedCountryCode);
-    });
+    };
+    DOM.comparisonClear?.addEventListener('click', clearComparison);
+    DOM.compClearBar?.addEventListener('click', clearComparison);
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') this.closeCard();
@@ -533,6 +538,20 @@ class CountriesAtlasApp {
     void DOM.knownCount.offsetWidth;
     DOM.knownCount.classList.add('bump');
     setTimeout(() => DOM.knownCount.classList.remove('bump'), 300);
+
+    if (DOM.knownReset) DOM.knownReset.hidden = count === 0;
+  }
+
+  resetKnownCountries() {
+    for (const code of this.knownCountries) {
+      DOM.mapContainer
+        ?.querySelector(`path[data-code="${code}"]`)
+        ?.classList.remove('known');
+    }
+    this.knownCountries.clear();
+    this.saveKnownCountries();
+    this.updateKnownCounter();
+    if (this.selectedCountryCode) this.updateKnownButton(this.selectedCountryCode);
   }
 
   addCountryToComparison(code) {
@@ -591,6 +610,8 @@ class CountriesAtlasApp {
         this.removeCountryFromComparison(i);
       });
     });
+
+    if (DOM.compClearBar) DOM.compClearBar.hidden = this.comparisonCountries.length === 0;
   }
 
   renderComparisonPanel() {

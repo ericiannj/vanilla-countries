@@ -150,6 +150,24 @@ body {
   transform: scale(1.3);
 }
 
+/* Known reset button — inside the pill, visible only when count > 0 */
+.known-reset {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  font-family: inherit;
+  flex-shrink: 0;
+  transition: color var(--t-fast) var(--ease);
+}
+
+.known-reset:hover {
+  color: var(--red);
+}
+
 /* ============================================================
    MAP AREA — full viewport hero
    ============================================================ */
@@ -603,6 +621,28 @@ body {
   color: var(--text-muted);
   font-weight: 700;
   flex-shrink: 0;
+}
+
+/* Clear comparison button — in the comparator bar, visible only when slots have countries */
+.comp-clear-bar {
+  font-size: 10px;
+  color: var(--text-muted);
+  background: none;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition:
+    color var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease);
+}
+
+.comp-clear-bar:hover {
+  color: var(--red);
+  border-color: var(--red);
 }
 
 /* ============================================================
