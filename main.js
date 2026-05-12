@@ -118,13 +118,37 @@ class CountriesAtlasApp {
 
   applyViewBox() {
     if (!this.svgElement || !this.mapView) return;
+    this.clampView();
     const { x, y, w, h } = this.mapView;
     this.svgElement.setAttribute('viewBox', `${x} ${y} ${w} ${h}`);
+  }
+
+  clampView() {
+    if (!this.mapView || !DOM.mapContainer) return;
+    const cW = DOM.mapContainer.clientWidth;
+    const cH = DOM.mapContainer.clientHeight;
+    // Maximum viewBox size that still fills the container (same as initMapView)
+    const fillScale = Math.max(cW / 2000, cH / 1000);
+    const maxW = cW / fillScale;
+    const maxH = cH / fillScale;
+
+    if (this.mapView.w > maxW) {
+      this.mapView.w = maxW;
+      this.mapView.h = maxH;
+    }
+
+    // Keep viewBox inside the 2000×1000 SVG canvas so black borders never show
+    this.mapView.x = Math.max(0, Math.min(this.mapView.x, 2000 - this.mapView.w));
+    this.mapView.y = Math.max(0, Math.min(this.mapView.y, 1000 - this.mapView.h));
   }
 
   zoomMap(pivotX, pivotY, factor) {
     if (!this.mapView || !DOM.mapContainer) return;
     const rect = DOM.mapContainer.getBoundingClientRect();
+    // Pre-compute the min-zoom limit so the pivot math uses the clamped width
+    const fillScale = Math.max(rect.width / 2000, rect.height / 1000);
+    const maxW = rect.width / fillScale;
+
     const scaleX = this.mapView.w / rect.width;
     const scaleY = this.mapView.h / rect.height;
 
@@ -132,7 +156,7 @@ class CountriesAtlasApp {
     const svgX = this.mapView.x + pivotX * scaleX;
     const svgY = this.mapView.y + pivotY * scaleY;
 
-    const newW = Math.min(Math.max(this.mapView.w * factor, 80), 6000);
+    const newW = Math.min(Math.max(this.mapView.w * factor, 80), maxW);
     const newH = newW * (rect.height / rect.width);
 
     this.mapView.x = svgX - pivotX * (newW / rect.width);
