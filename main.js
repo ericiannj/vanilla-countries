@@ -36,6 +36,9 @@ class CountriesAtlasApp {
     this.knownCountries = new Set();
     this.comparisonCountries = [];
     this.countryCache = new Map();
+    this.svgElement = null;
+    this.mapView = null;
+    this.mapDragged = false;
     this.init();
   }
 
@@ -79,6 +82,10 @@ class CountriesAtlasApp {
         if (svg) {
           svg.setAttribute('role', 'img');
           svg.setAttribute('aria-label', 'Interactive world map — click a country to explore it');
+          svg.setAttribute('preserveAspectRatio', 'none');
+          this.svgElement = svg;
+          this.initMapView();
+          this.bindMapZoomPan();
         }
         this.bindMapEvents();
         this.applyMapClasses();
@@ -92,11 +99,177 @@ class CountriesAtlasApp {
     }
   }
 
+  initMapView() {
+    if (!DOM.mapContainer) return;
+    const cW = DOM.mapContainer.clientWidth;
+    const cH = DOM.mapContainer.clientHeight;
+    // Scale to fill the container without distortion (object-fit: cover behavior)
+    const fillScale = Math.max(cW / 2000, cH / 1000);
+    const vbW = cW / fillScale;
+    const vbH = cH / fillScale;
+    this.mapView = {
+      x: (2000 - vbW) / 2,
+      y: (1000 - vbH) / 2,
+      w: vbW,
+      h: vbH,
+    };
+    this.applyViewBox();
+  }
+
+  applyViewBox() {
+    if (!this.svgElement || !this.mapView) return;
+    const { x, y, w, h } = this.mapView;
+    this.svgElement.setAttribute('viewBox', `${x} ${y} ${w} ${h}`);
+  }
+
+  zoomMap(pivotX, pivotY, factor) {
+    if (!this.mapView || !DOM.mapContainer) return;
+    const rect = DOM.mapContainer.getBoundingClientRect();
+    const scaleX = this.mapView.w / rect.width;
+    const scaleY = this.mapView.h / rect.height;
+
+    // SVG coordinate under the cursor/pinch midpoint
+    const svgX = this.mapView.x + pivotX * scaleX;
+    const svgY = this.mapView.y + pivotY * scaleY;
+
+    const newW = Math.min(Math.max(this.mapView.w * factor, 80), 6000);
+    const newH = newW * (rect.height / rect.width);
+
+    this.mapView.x = svgX - pivotX * (newW / rect.width);
+    this.mapView.y = svgY - pivotY * (newH / rect.height);
+    this.mapView.w = newW;
+    this.mapView.h = newH;
+    this.applyViewBox();
+  }
+
+  bindMapZoomPan() {
+    const container = DOM.mapContainer;
+    if (!container) return;
+
+    let isPanning = false;
+    let panStart = { x: 0, y: 0 };
+    let panViewStart = { x: 0, y: 0 };
+    let mouseDownPos = { x: 0, y: 0 };
+    const DRAG_THRESHOLD = 5;
+
+    // Wheel zoom
+    container.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const rect = container.getBoundingClientRect();
+      const factor = e.deltaY < 0 ? 0.85 : 1 / 0.85;
+      this.zoomMap(e.clientX - rect.left, e.clientY - rect.top, factor);
+    }, { passive: false });
+
+    // Mouse pan
+    container.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      this.mapDragged = false;
+      isPanning = true;
+      mouseDownPos = { x: e.clientX, y: e.clientY };
+      panStart = { x: e.clientX, y: e.clientY };
+      panViewStart = { x: this.mapView.x, y: this.mapView.y };
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isPanning) return;
+      const dx = e.clientX - mouseDownPos.x;
+      const dy = e.clientY - mouseDownPos.y;
+      if (!this.mapDragged && Math.hypot(dx, dy) > DRAG_THRESHOLD) {
+        this.mapDragged = true;
+        container.style.cursor = 'grabbing';
+      }
+      if (!this.mapDragged) return;
+      const rect = container.getBoundingClientRect();
+      this.mapView.x = panViewStart.x - (e.clientX - panStart.x) * (this.mapView.w / rect.width);
+      this.mapView.y = panViewStart.y - (e.clientY - panStart.y) * (this.mapView.h / rect.height);
+      this.applyViewBox();
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (isPanning) {
+        isPanning = false;
+        container.style.cursor = '';
+      }
+    });
+
+    // Touch — pan (1 finger) and pinch-to-zoom (2 fingers)
+    let lastTouchDist = 0;
+    let isTouchPanning = false;
+    let touchPanStart = { x: 0, y: 0 };
+    let touchViewStart = { x: 0, y: 0 };
+    let touchDownPos = { x: 0, y: 0 };
+
+    container.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      this.mapDragged = false;
+      if (e.touches.length === 1) {
+        isTouchPanning = true;
+        touchDownPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        touchPanStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        touchViewStart = { x: this.mapView.x, y: this.mapView.y };
+      } else if (e.touches.length === 2) {
+        isTouchPanning = false;
+        lastTouchDist = Math.hypot(
+          e.touches[1].clientX - e.touches[0].clientX,
+          e.touches[1].clientY - e.touches[0].clientY
+        );
+      }
+    }, { passive: false });
+
+    container.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      const rect = container.getBoundingClientRect();
+      if (e.touches.length === 1 && isTouchPanning) {
+        const tdx = e.touches[0].clientX - touchDownPos.x;
+        const tdy = e.touches[0].clientY - touchDownPos.y;
+        if (!this.mapDragged && Math.hypot(tdx, tdy) > DRAG_THRESHOLD) {
+          this.mapDragged = true;
+        }
+        if (!this.mapDragged) return;
+        this.mapView.x = touchViewStart.x - (e.touches[0].clientX - touchPanStart.x) * (this.mapView.w / rect.width);
+        this.mapView.y = touchViewStart.y - (e.touches[0].clientY - touchPanStart.y) * (this.mapView.h / rect.height);
+        this.applyViewBox();
+      } else if (e.touches.length === 2) {
+        const dist = Math.hypot(
+          e.touches[1].clientX - e.touches[0].clientX,
+          e.touches[1].clientY - e.touches[0].clientY
+        );
+        const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+        const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
+        if (lastTouchDist > 0) this.zoomMap(midX, midY, lastTouchDist / dist);
+        lastTouchDist = dist;
+      }
+    }, { passive: false });
+
+    container.addEventListener('touchend', () => {
+      isTouchPanning = false;
+    });
+
+    // Maintain fill on resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (!this.mapView || !DOM.mapContainer) return;
+        const cW = DOM.mapContainer.clientWidth;
+        const cH = DOM.mapContainer.clientHeight;
+        const svgUnitsPerPx = this.mapView.w / cW;
+        const cx = this.mapView.x + this.mapView.w / 2;
+        const cy = this.mapView.y + this.mapView.h / 2;
+        const newW = cW * svgUnitsPerPx;
+        const newH = cH * svgUnitsPerPx;
+        this.mapView = { x: cx - newW / 2, y: cy - newH / 2, w: newW, h: newH };
+        this.applyViewBox();
+      }, 80);
+    });
+  }
+
   bindMapEvents() {
     const svg = DOM.mapContainer?.querySelector('svg');
     if (!svg) return;
 
     svg.addEventListener('click', (e) => {
+      if (this.mapDragged) return;
       const path = e.target.closest('path[data-code]');
       if (!path) return;
       this.selectCountry(path.dataset.code);
@@ -282,6 +455,16 @@ class CountriesAtlasApp {
   bindEvents() {
     DOM.cardClose?.addEventListener('click', () => this.closeCard());
     DOM.btnKnown?.addEventListener('click', () => this.toggleKnownCountry(this.selectedCountryCode));
+
+    document.getElementById('mapZoomIn')?.addEventListener('click', () => {
+      const rect = DOM.mapContainer.getBoundingClientRect();
+      this.zoomMap(rect.width / 2, rect.height / 2, 0.7);
+    });
+    document.getElementById('mapZoomOut')?.addEventListener('click', () => {
+      const rect = DOM.mapContainer.getBoundingClientRect();
+      this.zoomMap(rect.width / 2, rect.height / 2, 1 / 0.7);
+    });
+    document.getElementById('mapReset')?.addEventListener('click', () => this.initMapView());
 
     DOM.btnCompare?.addEventListener('click', () => {
       if (!this.selectedCountryCode) return;
