@@ -19,4 +19,10 @@ jobs:
           aws-region: us-east-2
 
       - name: Sync to S3
-        run: aws s3 sync . s3://vanilla-countries --delete
+        run: |
+          aws s3 sync . s3://vanilla-countries \
+            --exclude ".git/*" \
+            --exclude ".github/*" \
+            --exclude "*.md" \
+            --exclude "package.json" \
+            --delete
