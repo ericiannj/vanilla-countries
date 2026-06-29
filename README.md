@@ -1,6 +1,22 @@
-# vanilla-countries
+<p align="center">
+  <span style="font-size: 96px">🌍</span>
+</p>
 
-An interactive world atlas built with vanilla HTML, CSS, and JavaScript — no frameworks, no build step.
+<h1 align="center">vanilla-countries</h1>
+
+<p align="center">
+  An interactive world atlas built with vanilla HTML, CSS, and JavaScript — no frameworks, no build step.
+</p>
+
+---
+
+## Why
+
+Most mapping apps pull in heavy dependencies. This one doesn't. The goal was to build a fully interactive, data-rich geography tool using only what the browser already provides — no bundler, no framework, no runtime compilation. Just files served over HTTP.
+
+- **Zero dependencies** — no npm package does the heavy lifting, everything is hand-rolled
+- **No build step** — open it, serve it, it works
+- **Full interactivity** — click, zoom, pan, compare, and track countries you know, all in plain JS
 
 ## Features
 
@@ -10,7 +26,7 @@ An interactive world atlas built with vanilla HTML, CSS, and JavaScript — no f
 - **Known Countries** — Toggle any selected country as known. Known countries are highlighted on the map and counted in a live header widget. State persists across page reloads via `localStorage`.
 - **Country Comparator** — Add up to two countries from the detail panel to compare them side by side. A bar at the bottom shows current comparison slots; the panel expands to display the full comparison table.
 
-## Running Locally
+## Quick Start
 
 The app has no build step, but it **must be served over HTTP** — opening `index.html` directly as a `file://` URL will not work. The SVG world map is loaded at runtime via `fetch()` so JavaScript can interact with individual country `<path>` elements. Browsers block `fetch` on the `file://` protocol due to CORS policy.
 
