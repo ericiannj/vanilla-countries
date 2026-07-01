@@ -1,5 +1,5 @@
 const CONFIG = {
-  API_BASE_URL: 'https://restcountries.com/v3.1/alpha',
+  COUNTRIES_DATA_URL: 'assets/countries.json',
   STORAGE_KEY: 'vanillaCountries.knownCountries',
 };
 
@@ -38,6 +38,7 @@ class CountriesAtlasApp {
     this.knownCountries = new Set();
     this.comparisonCountries = [];
     this.countryCache = new Map();
+    this.countriesByCode = null;
     this.svgElement = null;
     this.mapView = null;
     this.mapDragged = false;
@@ -326,23 +327,33 @@ class CountriesAtlasApp {
       .catch(() => this.showErrorState(code));
   }
 
+  async loadCountriesData() {
+    if (!this.countriesByCode) {
+      const res = await fetch(CONFIG.COUNTRIES_DATA_URL);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const list = await res.json();
+      this.countriesByCode = new Map(list.map(c => [c.cca2, c]));
+    }
+    return this.countriesByCode;
+  }
+
   async fetchCountryByCode(code) {
     if (this.countryCache.has(code)) {
       return this.countryCache.get(code);
     }
-    const res = await fetch(`${CONFIG.API_BASE_URL}/${code}`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const [raw] = await res.json();
+    const countriesByCode = await this.loadCountriesData();
+    const raw = countriesByCode.get(code);
+    if (!raw) throw new Error(`Unknown country code: ${code}`);
     const data = this.normalizeCountryData(raw);
     this.countryCache.set(code, data);
     return data;
   }
 
   normalizeCountryData(raw) {
-    const currencies = raw.currencies
+    const currencies = raw.currencies && Object.keys(raw.currencies).length
       ? Object.values(raw.currencies).map(c => c.name).join(', ')
       : '—';
-    const languages = raw.languages
+    const languages = raw.languages && Object.keys(raw.languages).length
       ? Object.values(raw.languages).join(', ')
       : '—';
 
@@ -450,16 +461,19 @@ class CountriesAtlasApp {
       DOM.mapContainer
         ?.querySelector(`path[data-code="${code}"]`)
         ?.classList.remove('known');
+      this.saveKnownCountries();
+      this.updateKnownCounter();
+      this.closeCard();
     } else {
       this.knownCountries.add(code);
       DOM.mapContainer
         ?.querySelector(`path[data-code="${code}"]`)
         ?.classList.add('known');
-    }
 
-    this.saveKnownCountries();
-    this.updateKnownCounter();
-    this.updateKnownButton(code);
+      this.saveKnownCountries();
+      this.updateKnownCounter();
+      this.closeCard();
+    }
   }
 
   updateKnownButton(code) {
