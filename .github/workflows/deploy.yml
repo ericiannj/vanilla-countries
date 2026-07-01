@@ -26,3 +26,9 @@ jobs:
             --exclude "*.md" \
             --exclude "package.json" \
             --delete
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ERN1ZFQBUYCYV \
+            --paths "/*"
