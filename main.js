@@ -1,6 +1,9 @@
+const IS_LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);
+
 const CONFIG = {
   API_BASE_URL:
-    new URLSearchParams(location.search).get('api') ?? 'http://localhost:8000',
+    new URLSearchParams(location.search).get('api') ??
+    (IS_LOCAL ? 'http://localhost:8000' : 'https://countries-api.ericjunqueira.com'),
   STORAGE_KEY: 'vanillaCountries.knownCountries',
 };
 

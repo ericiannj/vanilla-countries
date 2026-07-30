@@ -48,7 +48,7 @@ This runs `npx serve .` on **http://localhost:3000**.
 
 The app has no build step, but it **must be served over HTTP** — opening `index.html` as a `file://` URL will not work, because browsers block `fetch` on the `file://` protocol.
 
-By default the frontend looks for the API at `http://localhost:8000`. Point it somewhere else with the `api` query parameter:
+The frontend picks its API by hostname: on `localhost` it uses `http://localhost:8000`, anywhere else it uses the deployed API on AWS Lambda. Override either with the `api` query parameter:
 
 ```
 http://localhost:3000/?api=https://your-api-host
@@ -90,7 +90,7 @@ This project first relied on the REST Countries API (`restcountries.com`), but i
 ## Known Limitations
 
 - **SVG coverage** — The world map SVG only has paths for 174 of the 250 entries in the dataset, mostly missing small island nations, microstates, and dependent territories (e.g. Malta, Singapore, Hong Kong, Curaçao, most Caribbean and Pacific island states). Countries not present in the SVG cannot be selected on the map, even though the API serves them and they can still be reached as a border chip from a neighboring country.
-- **Requires the API** — Country details need `countries-api` reachable. With no API, the map still renders and known-countries still works, but selecting a country shows an error state. The deployed site currently defaults to `http://localhost:8000`, so country data only loads when the API is running locally.
+- **Requires the API** — Country details need `countries-api` reachable. With no API, the map still renders and known-countries still works, but selecting a country shows an error state. The deployed site calls a Lambda function URL backed by a serverless Postgres, so the first request after a period of inactivity pays a cold start of a second or two.
 - **Dataset snapshot** — The API's seed data was captured at a point in time, so figures like population drift out of date until the seed is refreshed. Around 35 territories have no population figure and show `—`.
 - **No keyboard map navigation** — Individual countries on the SVG map are not reachable via keyboard tab navigation. The app is mouse/touch-driven for map interaction.
 - **Mobile zoom controls** — The on-screen +/−/⊙ buttons are hidden on mobile viewports. Pinch-to-zoom and single-finger pan gestures are the intended interaction on touch devices.
