@@ -1,5 +1,6 @@
 const CONFIG = {
-  COUNTRIES_DATA_URL: 'assets/countries.json',
+  API_BASE_URL:
+    new URLSearchParams(location.search).get('api') ?? 'http://localhost:8000',
   STORAGE_KEY: 'vanillaCountries.knownCountries',
 };
 
@@ -38,7 +39,6 @@ class CountriesAtlasApp {
     this.knownCountries = new Set();
     this.comparisonCountries = [];
     this.countryCache = new Map();
-    this.countriesByCode = null;
     this.svgElement = null;
     this.mapView = null;
     this.mapDragged = false;
@@ -324,52 +324,47 @@ class CountriesAtlasApp {
     this.showLoadingState();
     this.fetchCountryByCode(code)
       .then(data => this.renderCountryDetails(data))
-      .catch(() => this.showErrorState(code));
-  }
-
-  async loadCountriesData() {
-    if (!this.countriesByCode) {
-      const res = await fetch(CONFIG.COUNTRIES_DATA_URL);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const list = await res.json();
-      this.countriesByCode = new Map(list.map(c => [c.cca2, c]));
-    }
-    return this.countriesByCode;
+      .catch(error => this.showErrorState(code, error));
   }
 
   async fetchCountryByCode(code) {
     if (this.countryCache.has(code)) {
       return this.countryCache.get(code);
     }
-    const countriesByCode = await this.loadCountriesData();
-    const raw = countriesByCode.get(code);
-    if (!raw) throw new Error(`Unknown country code: ${code}`);
-    const data = this.normalizeCountryData(raw);
+    const res = await fetch(
+      `${CONFIG.API_BASE_URL}/countries/${encodeURIComponent(code)}`
+    );
+    if (!res.ok) {
+      const error = new Error(`HTTP ${res.status}`);
+      error.status = res.status;
+      throw error;
+    }
+    const data = this.normalizeCountryData(await res.json());
     this.countryCache.set(code, data);
     return data;
   }
 
   normalizeCountryData(raw) {
-    const currencies = raw.currencies && Object.keys(raw.currencies).length
-      ? Object.values(raw.currencies).map(c => c.name).join(', ')
+    const currencies = raw.currencies?.length
+      ? raw.currencies.map(c => c.name).join(', ')
       : '—';
-    const languages = raw.languages && Object.keys(raw.languages).length
-      ? Object.values(raw.languages).join(', ')
+    const languages = raw.languages?.length
+      ? raw.languages.map(l => l.name).join(', ')
       : '—';
 
     return {
-      code:       raw.cca2 ?? '',
-      flag:       raw.flag ?? '',
-      common:     raw.name?.common ?? raw.cca2 ?? '',
-      official:   raw.name?.official ?? '',
-      capital:    raw.capital?.[0] ?? '—',
+      code: raw.cca2 ?? '',
+      flag: raw.flag ?? '',
+      common: raw.name?.common ?? raw.cca2 ?? '',
+      official: raw.name?.official ?? '',
+      capital: raw.capital?.[0] ?? '—',
       population: raw.population != null ? raw.population.toLocaleString() : '—',
-      area:       raw.area != null ? raw.area.toLocaleString() + ' km²' : '—',
-      region:     raw.region ?? '—',
-      subregion:  raw.subregion ?? '—',
+      area: raw.area != null ? raw.area.toLocaleString() + ' km²' : '—',
+      region: raw.region ?? '—',
+      subregion: raw.subregion ?? '—',
       languages,
       currencies,
-      borders:    raw.borders ?? [],
+      borders: raw.borders ?? [],
     };
   }
 
@@ -404,12 +399,12 @@ class CountriesAtlasApp {
 
     if (DOM.cardGrid) {
       const stats = [
-        { label: 'Capital',    value: data.capital },
+        { label: 'Capital', value: data.capital },
         { label: 'Population', value: data.population },
-        { label: 'Area',       value: data.area },
-        { label: 'Region',     value: data.region },
-        { label: 'Subregion',  value: data.subregion },
-        { label: 'Languages',  value: data.languages },
+        { label: 'Area', value: data.area },
+        { label: 'Region', value: data.region },
+        { label: 'Subregion', value: data.subregion },
+        { label: 'Languages', value: data.languages },
         { label: 'Currencies', value: data.currencies },
       ];
       DOM.cardGrid.innerHTML = stats.map(s =>
@@ -438,15 +433,30 @@ class CountriesAtlasApp {
     this.updateCompareButton(data.code);
   }
 
-  showErrorState(code) {
+  showErrorState(code, error) {
     if (!DOM.detailCard) return;
+
+    const status = error?.status;
+    let subtitle;
+    let message;
+
+    if (status === 404) {
+      subtitle = 'No data for this country';
+      message = 'The API has no record for this country code.';
+    } else if (status != null) {
+      subtitle = 'The API returned an error';
+      message = `The API is running but responded with status ${status}.`;
+    } else {
+      subtitle = 'Could not reach the API';
+      message = 'The API is unreachable. Check that it is running and try again.';
+    }
 
     if (DOM.cardFlag) DOM.cardFlag.textContent = '⚠️';
     if (DOM.cardCommon) DOM.cardCommon.textContent = code;
-    if (DOM.cardOfficial) DOM.cardOfficial.textContent = 'Could not load data';
+    if (DOM.cardOfficial) DOM.cardOfficial.textContent = subtitle;
     if (DOM.cardGrid) {
       DOM.cardGrid.innerHTML =
-        `<p class="card-error-msg">Request failed. Check your connection and try again.</p>`;
+        `<p class="card-error-msg">${this.escapeHtml(message)}</p>`;
     }
     if (DOM.cardChips) DOM.cardChips.innerHTML = '';
     DOM.detailCard.removeAttribute('aria-busy');
@@ -584,8 +594,13 @@ class CountriesAtlasApp {
         if (this.selectedCountryCode) this.updateCompareButton(this.selectedCountryCode);
       })
       .catch(() => {
+        // Don't keep a country in the comparator that never loaded — it would
+        // render as a skeleton card forever.
+        const index = this.comparisonCountries.indexOf(code);
+        if (index !== -1) this.comparisonCountries.splice(index, 1);
         this.renderComparatorSlots();
         this.renderComparisonPanel();
+        if (this.selectedCountryCode) this.updateCompareButton(this.selectedCountryCode);
       });
   }
 
@@ -652,12 +667,12 @@ class CountriesAtlasApp {
       }
 
       const stats = [
-        { label: 'Capital',    value: data.capital },
+        { label: 'Capital', value: data.capital },
         { label: 'Population', value: data.population },
-        { label: 'Area',       value: data.area },
-        { label: 'Region',     value: data.region },
-        { label: 'Subregion',  value: data.subregion },
-        { label: 'Languages',  value: data.languages },
+        { label: 'Area', value: data.area },
+        { label: 'Region', value: data.region },
+        { label: 'Subregion', value: data.subregion },
+        { label: 'Languages', value: data.languages },
         { label: 'Currencies', value: data.currencies },
       ];
 
